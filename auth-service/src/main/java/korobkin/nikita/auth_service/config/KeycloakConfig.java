@@ -26,7 +26,7 @@ public class KeycloakConfig {
     }
 
     @Bean
-    public RealmResource adminRealmResource(Keycloak adminkKeycloak) {
-        return adminkKeycloak.realm(keycloakProperties.getRealmResource());
+    public RealmResource adminRealmResource(Keycloak adminKeycloak) {
+        return adminKeycloak.realm(keycloakProperties.getRealmResource());
     }
 }
