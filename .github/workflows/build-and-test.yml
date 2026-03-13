@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     services:
       postgres:
         image: postgres:latest
@@ -23,28 +24,10 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-      keycloak:
-        image: quay.io/keycloak/keycloak:latest
-        env:
-          KEYCLOAK_ADMIN: admin
-          KEYCLOAK_ADMIN_PASSWORD: admin
-          KC_DB: dev-file
-          KC_HOSTNAME_STRICT: "false"
-          KC_HOSTNAME: localhost
-        ports:
-          - 8080:8080
-        options: >-
-          --health-cmd "curl -f http://localhost:8080/health/live || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 3
-
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -60,10 +43,19 @@ jobs:
             sleep 3
           done
 
+      - name: Start Keycloak container
+        run: |
+          docker run -d --name keycloak \
+            -p 8080:8080 \
+            -e KEYCLOAK_ADMIN=admin \
+            -e KEYCLOAK_ADMIN_PASSWORD=admin \
+            -e KC_DB=dev-file \
+            quay.io/keycloak/keycloak:latest start-dev
+
       - name: Wait for Keycloak to be ready
         run: |
-          for i in {1..10}; do
-            nc -z localhost 8080 && echo "Keycloak is up" && break
+          for i in {1..20}; do
+            curl -f http://localhost:8080/health/live && echo "Keycloak is up" && break
             echo "Waiting for Keycloak..."
             sleep 5
           done
