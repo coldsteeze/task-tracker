@@ -38,7 +38,6 @@ jobs:
           --health-interval 30s
           --health-timeout 10s
           --health-retries 3
-        command: start-dev
 
 
     steps:
