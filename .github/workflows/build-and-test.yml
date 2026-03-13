@@ -50,12 +50,13 @@ jobs:
             -e KEYCLOAK_ADMIN=admin \
             -e KEYCLOAK_ADMIN_PASSWORD=admin \
             -e KC_DB=dev-file \
+            -e KC_HEALTH_ENABLED=true \
             quay.io/keycloak/keycloak:latest start-dev
 
       - name: Wait for Keycloak to be ready
         run: |
           for i in {1..20}; do
-            curl -f http://localhost:8080/q/health/live && echo "Keycloak is up" && break
+            curl -f http://localhost:8080/q/health/ready && echo "Keycloak is up" && break
             echo "Waiting for Keycloak..."
             sleep 5
           done
