@@ -1,0 +1,65 @@
+{
+  "realm": "test-realm",
+  "enabled": true,
+
+  "roles": {
+    "realm": [
+      { "name": "USER" },
+      { "name": "ADMIN" }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "admin-cli",
+      "name": "Admin Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "admin-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    },
+    {
+      "clientId": "auth-service",
+      "name": "Auth Service Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "test-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+
+  "users": [
+    {
+      "username": "existing-user",
+      "enabled": true,
+      "email": "existing@mail.com",
+      "firstName": "test",
+      "lastName": "test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["USER"]
+    },
+    {
+      "username": "service-account-admin-cli",
+      "enabled": true,
+      "serviceAccountClientId": "admin-cli",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "query-users"
+        ]
+      }
+    }
+  ]
+}

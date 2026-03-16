@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://auth_postgres:5432/${AUTH_SERVICE_POSTGRES_DB:auth_db}
+    username: ${AUTH_SERVICE_POSTGRES_USER:postgres}
+    password: ${AUTH_SERVICE_POSTGRES_PASSWORD:postgres}
+
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
+  realm-resource: ${KEYCLOAK_REALM}
+  admin-client:
+    client-id: ${KEYCLOAK_ADMIN_CLIENT_ID}
+    client-secret: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+  frontend-client:
+    client-id: ${KEYCLOAK_FRONTEND_CLIENT_ID}
+    client-secret: ${KEYCLOAK_FRONTEND_CLIENT_SECRET}
