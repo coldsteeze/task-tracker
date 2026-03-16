@@ -10,6 +10,22 @@ services:
       - "5432:5432"
     volumes:
       - auth_postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
+
+  task_postgres:
+    image: postgres:18.3
+    container_name: task_postgres
+    environment:
+      POSTGRES_USER: ${TASK_SERVICE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TASK_SERVICE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TASK_SERVICE_POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - task_postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
@@ -48,9 +64,34 @@ services:
       KEYCLOAK_FRONTEND_CLIENT_SECRET: ${KEYCLOAK_FRONTEND_CLIENT_SECRET}
     ports:
       - "8081:8080"
+    networks:
+      - app-network
+    depends_on:
+      - auth_postgres
+      - keycloak
+
+  task-service:
+    build:
+      context: ./task-service
+    image: lemoonier/task-service:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      TASK_SERVICE_POSTGRES_USER: ${AUTH_SERVICE_POSTGRES_USER}
+      TASK_SERVICE_POSTGRES_PASSWORD: ${AUTH_SERVICE_POSTGRES_PASSWORD}
+      TASK_SERVICE_POSTGRES_DB: ${AUTH_SERVICE_POSTGRES_DB}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+    ports:
+      - "8082:8080"
+    networks:
+      - app-network
+    depends_on:
+      - task_postgres
+      - keycloak
 
 volumes:
   auth_postgres_data:
+  task_postgres_data:
 
 networks:
   app-network:
