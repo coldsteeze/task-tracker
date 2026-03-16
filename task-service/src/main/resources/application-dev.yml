@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/task-service
+    username: postgres
+    password: postgres
+
+server:
+  port: 8082
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm-resource: task-tracker
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/task-service
+    username: postgres
+    password: postgres
+
+server:
+  port: 8082
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm-resource: task-tracker
