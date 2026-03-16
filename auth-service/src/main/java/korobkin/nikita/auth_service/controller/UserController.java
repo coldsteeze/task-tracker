@@ -1,5 +1,6 @@
 package korobkin.nikita.auth_service.controller;
 
+import korobkin.nikita.auth_service.docs.UserControllerDocs;
 import korobkin.nikita.auth_service.dto.response.UserResponse;
 import korobkin.nikita.auth_service.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
