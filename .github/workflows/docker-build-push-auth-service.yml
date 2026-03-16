@@ -3,7 +3,7 @@ name: Build and Push Auth Service Docker Image
 on:
   push:
     branches:
-      - dev
+      - develop
     paths:
       - 'auth-service/**'
       - '.github/workflows/docker-build-push-auth-service.yml'
