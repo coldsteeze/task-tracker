@@ -25,5 +25,9 @@ public record UserResponse(
 
         @Schema(description = "Created at",
                 example = "2026-03-12 01:14:58.976637")
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+
+        @Schema(description = "Updated at",
+                example = "2026-03-12 01:14:58.976637")
+        LocalDateTime updatedAt
 ) {}

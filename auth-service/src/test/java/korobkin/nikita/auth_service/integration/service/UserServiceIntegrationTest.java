@@ -60,6 +60,7 @@ public class UserServiceIntegrationTest extends AbstractDbIntegrationTest {
         assertEquals(UserRepresentationFixtures.EMAIL, response.email());
         assertNotNull(response.id());
         assertNotNull(response.createdAt());
+        assertNotNull(response.updatedAt());
     }
 
     @Test
