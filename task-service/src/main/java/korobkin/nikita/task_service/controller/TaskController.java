@@ -1,6 +1,7 @@
 package korobkin.nikita.task_service.controller;
 
 import jakarta.validation.Valid;
+import korobkin.nikita.task_service.docs.TaskControllerDocs;
 import korobkin.nikita.task_service.dto.request.CreateTaskRequest;
 import korobkin.nikita.task_service.dto.request.TaskFilterRequest;
 import korobkin.nikita.task_service.dto.request.UpdateTaskRequest;
@@ -21,7 +22,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/tasks")
-public class TaskController {
+public class TaskController implements TaskControllerDocs {
 
     private final TaskService taskService;
 
