@@ -15,8 +15,6 @@ public interface TaskMapper {
 
     Task toEntity(CreateTaskRequest createTaskRequest);
 
-    @Mapping(target = "createdAt", source = "createdAt")
-    @Mapping(target = "updatedAt", source = "updatedAt")
     TaskResponse toResponse(Task task);
 
     void updateEntityFromDto(UpdateTaskRequest updateTaskRequest, @MappingTarget Task task);
