@@ -152,8 +152,8 @@ public class TaskServiceImpl implements TaskService {
                 predicates.add(cb.like(cb.lower(root.get("title")), "%" + filter.getSearch().toLowerCase() + "%"));
             }
 
-            if (filter.getTaskStatus() != null) {
-                predicates.add(cb.equal(root.get("taskStatus"), filter.getTaskStatus()));
+            if (filter.getStatus() != null) {
+                predicates.add(cb.equal(root.get("status"), filter.getStatus()));
             }
 
             if (filter.getCreatedAfter() != null) {

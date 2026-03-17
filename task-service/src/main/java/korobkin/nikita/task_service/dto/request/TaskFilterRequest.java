@@ -17,7 +17,8 @@ public class TaskFilterRequest {
     @Schema(example = "portfolio", description = "Partial search in project name")
     private String search;
 
-    private TaskStatus taskStatus;
+    @Schema(example = "IN_PROGRESS", description = "Status of task (e.g. TODO, DONE, IN_PROGRESS)")
+    private TaskStatus status;
 
     @Schema(description = "Filter by creation date (start, optional)")
     private LocalDateTime createdAfter;
