@@ -1,6 +1,8 @@
 package korobkin.nikita.task_service.service.impl;
 
 import jakarta.persistence.criteria.Predicate;
+import korobkin.nikita.task_events.TaskCreatedEvent;
+import korobkin.nikita.task_events.TaskStatusChangedEvent;
 import korobkin.nikita.task_service.dto.request.CreateTaskRequest;
 import korobkin.nikita.task_service.dto.request.TaskFilterRequest;
 import korobkin.nikita.task_service.dto.request.UpdateTaskRequest;
@@ -8,9 +10,11 @@ import korobkin.nikita.task_service.dto.request.UpdateTaskStatusRequest;
 import korobkin.nikita.task_service.dto.response.PagedResponse;
 import korobkin.nikita.task_service.dto.response.TaskResponse;
 import korobkin.nikita.task_service.entity.Task;
+import korobkin.nikita.task_service.entity.enums.TaskStatus;
 import korobkin.nikita.task_service.exception.ErrorCode;
 import korobkin.nikita.task_service.exception.TaskAccessDeniedException;
 import korobkin.nikita.task_service.exception.TaskNotFoundException;
+import korobkin.nikita.task_service.kafka.producer.TaskEventProducer;
 import korobkin.nikita.task_service.mapper.TaskMapper;
 import korobkin.nikita.task_service.repository.TaskRepository;
 import korobkin.nikita.task_service.service.TaskService;
@@ -34,6 +38,7 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
+    private final TaskEventProducer taskEventProducer;
 
     @Override
     @Transactional
@@ -43,6 +48,17 @@ public class TaskServiceImpl implements TaskService {
 
         taskRepository.saveAndFlush(task);
         log.info("Task with id {} successfully saved", task.getId());
+
+        TaskCreatedEvent taskCreatedEvent = new TaskCreatedEvent(
+                task.getId(),
+                task.getUserId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getStatus().toString(),
+                task.getCreatedAt()
+        );
+
+        taskEventProducer.sendTaskCreated(taskCreatedEvent);
 
         return taskMapper.toResponse(task);
     }
@@ -85,11 +101,23 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public TaskResponse updateTaskStatusById(UpdateTaskStatusRequest request, UUID id, Jwt jwt) {
         Task task = getTaskIfOwner(id, jwt);
+        TaskStatus oldStatus = task.getStatus();
 
         task.setStatus(request.getStatus());
         taskRepository.saveAndFlush(task);
 
         log.info("Task with id {} successfully updated status", id);
+
+        TaskStatusChangedEvent taskStatusChangedEvent = new TaskStatusChangedEvent(
+                task.getId(),
+                task.getUserId(),
+                task.getTitle(),
+                oldStatus.toString(),
+                task.getStatus().toString(),
+                task.getUpdatedAt()
+        );
+
+        taskEventProducer.sendTaskStatusChanged(taskStatusChangedEvent);
 
         return taskMapper.toResponse(task);
     }
