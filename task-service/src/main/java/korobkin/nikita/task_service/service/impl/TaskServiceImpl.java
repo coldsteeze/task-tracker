@@ -10,6 +10,7 @@ import korobkin.nikita.task_service.dto.request.UpdateTaskStatusRequest;
 import korobkin.nikita.task_service.dto.response.PagedResponse;
 import korobkin.nikita.task_service.dto.response.TaskResponse;
 import korobkin.nikita.task_service.entity.Task;
+import korobkin.nikita.task_service.entity.Task_;
 import korobkin.nikita.task_service.entity.enums.TaskStatus;
 import korobkin.nikita.task_service.exception.ErrorCode;
 import korobkin.nikita.task_service.exception.TaskAccessDeniedException;
@@ -146,30 +147,30 @@ public class TaskServiceImpl implements TaskService {
     private Page<Task> getUserTasksWithFilters(String userId, TaskFilterRequest filter, Pageable pageable) {
         Specification<Task> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(cb.equal(root.get("userId"), userId));
+            predicates.add(cb.equal(root.get(Task_.userId), userId));
 
             if (filter.getSearch() != null) {
-                predicates.add(cb.like(cb.lower(root.get("title")), "%" + filter.getSearch().toLowerCase() + "%"));
+                predicates.add(cb.like(cb.lower(root.get(Task_.title)), "%" + filter.getSearch().toLowerCase() + "%"));
             }
 
             if (filter.getStatus() != null) {
-                predicates.add(cb.equal(root.get("status"), filter.getStatus()));
+                predicates.add(cb.equal(root.get(Task_.status), filter.getStatus()));
             }
 
             if (filter.getCreatedAfter() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), filter.getCreatedAfter()));
+                predicates.add(cb.greaterThanOrEqualTo(root.get(Task_.createdAt), filter.getCreatedAfter()));
             }
 
             if (filter.getCreatedBefore() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), filter.getCreatedBefore()));
+                predicates.add(cb.lessThanOrEqualTo(root.get(Task_.createdAt), filter.getCreatedBefore()));
             }
 
             if (filter.getUpdatedAfter() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("updatedAt"), filter.getUpdatedAfter()));
+                predicates.add(cb.greaterThanOrEqualTo(root.get(Task_.updatedAt), filter.getUpdatedAfter()));
             }
 
             if (filter.getUpdatedBefore() != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("updatedAt"), filter.getUpdatedBefore()));
+                predicates.add(cb.lessThanOrEqualTo(root.get(Task_.updatedAt), filter.getUpdatedBefore()));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
