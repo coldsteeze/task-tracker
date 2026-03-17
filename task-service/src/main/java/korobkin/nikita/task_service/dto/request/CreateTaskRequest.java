@@ -19,7 +19,7 @@ public class CreateTaskRequest {
     private String title;
 
     @Schema(description = "Task description", example = "Add JWT-based authentication")
-    @Size(max = 5000, message = "Title too long")
+    @Size(max = 5000, message = "Description too long")
     private String description;
 
     @Schema(description = "Initial task status", example = "TODO")
