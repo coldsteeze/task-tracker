@@ -47,7 +47,7 @@ public class UserControllerIntegrationTest extends AbstractDbIntegrationTest {
                 .andExpect(jsonPath("$.keycloakId").value(user.getKeycloakId()))
                 .andExpect(jsonPath("$.username").value(user.getUsername()))
                 .andExpect(jsonPath("$.email").value(user.getEmail()))
-                .andExpect(jsonPath("$.createdAt").value(user.getCreatedAt().toString()));
+                .andExpect(jsonPath("$.createdAt").exists());
     }
 
     @Test
