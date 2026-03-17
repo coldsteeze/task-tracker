@@ -11,10 +11,10 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "Request filter DTO for searching user's projects")
+@Schema(description = "Request filter DTO for searching tasks")
 public class TaskFilterRequest {
 
-    @Schema(example = "portfolio", description = "Partial search in project name")
+    @Schema(example = "Fix", description = "Partial search in task title")
     private String search;
 
     @Schema(example = "IN_PROGRESS", description = "Status of task (e.g. TODO, DONE, IN_PROGRESS)")
