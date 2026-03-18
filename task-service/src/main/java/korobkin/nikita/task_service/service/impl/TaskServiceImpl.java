@@ -81,9 +81,11 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<TaskResponse> getTasks(TaskFilterRequest request, Pageable pageable) {
-        Page<Task> tasksPage = getUserTasksWithFilters(getCurrentUserId(), request, pageable);
+        String currentUserId = getCurrentUserId();
 
-        log.info("Successfully get user tasks with user id {}", getCurrentUserId());
+        Page<Task> tasksPage = getUserTasksWithFilters(currentUserId, request, pageable);
+
+        log.info("Successfully get user tasks with user id {}", currentUserId);
 
         return taskMapper.toPagedDto(tasksPage);
     }
