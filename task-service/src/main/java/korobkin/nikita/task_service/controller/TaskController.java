@@ -13,8 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -28,47 +27,44 @@ public class TaskController implements TaskControllerDocs {
 
     @PostMapping
     public ResponseEntity<TaskResponse> createTask(
-            @RequestBody @Valid CreateTaskRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, jwt));
+            @RequestBody @Valid CreateTaskRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request));
     }
 
     @GetMapping
     public ResponseEntity<PagedResponse<TaskResponse>> getTasks(
-            @AuthenticationPrincipal Jwt jwt,
             TaskFilterRequest request,
             Pageable pageable) {
-        return ResponseEntity.ok(taskService.getTasks(jwt, request, pageable));
+        return ResponseEntity.ok(taskService.getTasks(request, pageable));
     }
 
+    @PreAuthorize("@taskSecurity.isOwner(#p0, authentication)")
     @GetMapping("/{id}")
-    public ResponseEntity<TaskResponse> getTaskById(
-            @PathVariable("id") UUID id,
-            @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(taskService.getTaskById(id, jwt));
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(taskService.getTaskById(id));
     }
 
+    @PreAuthorize("@taskSecurity.isOwner(#p1, authentication)")
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponse> updateTaskById(
             @RequestBody @Valid UpdateTaskRequest request,
-            @PathVariable("id") UUID id,
-            @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(taskService.updateTaskById(request, id, jwt));
+            @PathVariable("id") UUID id) {
+        return ResponseEntity.ok(taskService.updateTaskById(request, id));
     }
 
+    @PreAuthorize("@taskSecurity.isOwner(#p1, authentication)")
     @PatchMapping("/{id}/status")
     public ResponseEntity<TaskResponse> updateTaskStatusById(
             @RequestBody @Valid UpdateTaskStatusRequest request,
-            @PathVariable("id") UUID id,
-            @AuthenticationPrincipal Jwt jwt) {
-        return ResponseEntity.ok(taskService.updateTaskStatusById(request, id, jwt));
+            @PathVariable("id") UUID id) {
+        return ResponseEntity.ok(taskService.updateTaskStatusById(request, id));
     }
 
+    @PreAuthorize("@taskSecurity.isOwner( #p0, authentication)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTaskById(
-            @PathVariable("id") UUID id,
-            @AuthenticationPrincipal Jwt jwt) {
-        taskService.deleteTaskById(id, jwt);
+            @PathVariable("id") UUID id) {
+        taskService.deleteTaskById(id);
         return ResponseEntity.noContent().build();
     }
 }

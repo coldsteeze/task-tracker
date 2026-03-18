@@ -20,7 +20,6 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.util.UUID;
 
@@ -61,8 +60,7 @@ public interface TaskControllerDocs {
                             schema = @Schema(implementation = CreateTaskRequest.class)
                     )
             )
-            CreateTaskRequest request,
-            Jwt jwt
+            CreateTaskRequest request
     );
 
     @Operation(
@@ -71,7 +69,6 @@ public interface TaskControllerDocs {
     )
     @ApiResponse(responseCode = "200", description = "Tasks retrieved successfully")
     ResponseEntity<PagedResponse<TaskResponse>> getTasks(
-            Jwt jwt,
             @ParameterObject TaskFilterRequest request,
             @ParameterObject Pageable pageable
     );
@@ -121,8 +118,7 @@ public interface TaskControllerDocs {
     })
     ResponseEntity<TaskResponse> getTaskById(
             @Parameter(description = "Task ID", example = "550e8400-e29b-41d4-a716-446655440000")
-            UUID id,
-            Jwt jwt
+            UUID id
     );
 
     @Operation(
@@ -196,8 +192,7 @@ public interface TaskControllerDocs {
                     )
             )
             UpdateTaskRequest request,
-            UUID id,
-            Jwt jwt
+            UUID id
     );
 
     @Operation(
@@ -253,8 +248,7 @@ public interface TaskControllerDocs {
                     )
             )
             UpdateTaskStatusRequest request,
-            UUID id,
-            Jwt jwt
+            UUID id
     );
 
     @Operation(
@@ -302,7 +296,6 @@ public interface TaskControllerDocs {
     })
     ResponseEntity<Void> deleteTaskById(
             @Parameter(description = "Task ID", example = "550e8400-e29b-41d4-a716-446655440000")
-            UUID id,
-            Jwt jwt
+            UUID id
     );
 }

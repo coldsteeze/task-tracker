@@ -16,9 +16,6 @@ import korobkin.nikita.task_service.entity.Task;
 import korobkin.nikita.task_service.entity.TaskEventOutbox;
 import korobkin.nikita.task_service.entity.Task_;
 import korobkin.nikita.task_service.entity.enums.TaskStatus;
-import korobkin.nikita.task_service.exception.ErrorCode;
-import korobkin.nikita.task_service.exception.TaskAccessDeniedException;
-import korobkin.nikita.task_service.exception.TaskNotFoundException;
 import korobkin.nikita.task_service.mapper.TaskMapper;
 import korobkin.nikita.task_service.repository.TaskEventOutboxRepository;
 import korobkin.nikita.task_service.repository.TaskRepository;
@@ -28,6 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,9 +48,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public TaskResponse createTask(CreateTaskRequest request, Jwt jwt) {
+    public TaskResponse createTask(CreateTaskRequest request) {
         Task task = taskMapper.toEntity(request);
-        task.setUserId(jwt.getSubject());
+        task.setUserId(getCurrentUserId());
 
         taskRepository.saveAndFlush(task);
         log.info("Task with id {} successfully saved", task.getId());
@@ -81,18 +80,18 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<TaskResponse> getTasks(Jwt jwt, TaskFilterRequest request, Pageable pageable) {
-        Page<Task> tasksPage = getUserTasksWithFilters(jwt.getSubject(), request, pageable);
+    public PagedResponse<TaskResponse> getTasks(TaskFilterRequest request, Pageable pageable) {
+        Page<Task> tasksPage = getUserTasksWithFilters(getCurrentUserId(), request, pageable);
 
-        log.info("Successfully get user tasks with user id {}", jwt.getSubject());
+        log.info("Successfully get user tasks with user id {}", getCurrentUserId());
 
         return taskMapper.toPagedDto(tasksPage);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public TaskResponse getTaskById(UUID id, Jwt jwt) {
-        Task task = getTaskIfOwner(id, jwt);
+    public TaskResponse getTaskById(UUID id) {
+        Task task = taskRepository.getReferenceById(id);
 
         log.info("Task with id {} successfully fetched", id);
 
@@ -101,8 +100,8 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public TaskResponse updateTaskById(UpdateTaskRequest request, UUID id, Jwt jwt) {
-        Task task = getTaskIfOwner(id, jwt);
+    public TaskResponse updateTaskById(UpdateTaskRequest request, UUID id) {
+        Task task = taskRepository.getReferenceById(id);
 
         taskMapper.updateEntityFromDto(request, task);
         taskRepository.saveAndFlush(task);
@@ -114,8 +113,9 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public TaskResponse updateTaskStatusById(UpdateTaskStatusRequest request, UUID id, Jwt jwt) {
-        Task task = getTaskIfOwner(id, jwt);
+    public TaskResponse updateTaskStatusById(UpdateTaskStatusRequest request, UUID id) {
+        Task task = taskRepository.getReferenceById(id);
+
         TaskStatus oldStatus = task.getStatus();
 
         task.setStatus(request.getStatus());
@@ -148,24 +148,20 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public void deleteTaskById(UUID id, Jwt jwt) {
-        Task task = getTaskIfOwner(id, jwt);
+    public void deleteTaskById(UUID id) {
+        Task task = taskRepository.getReferenceById(id);
 
         taskRepository.delete(task);
 
         log.info("Task with id {} successfully deleted", id);
     }
 
-    private Task getTaskIfOwner(UUID id, Jwt jwt) {
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new TaskNotFoundException(ErrorCode.TASK_NOT_FOUND));
+    private String getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) (authentication != null ? authentication.getPrincipal() : null);
 
-        if (!task.getUserId().equals(jwt.getSubject())) {
-            throw new TaskAccessDeniedException(ErrorCode.TASK_ACCESS_DENIED);
-        }
-        return task;
+        return jwt != null ? jwt.getSubject() : null;
     }
-
 
     private Page<Task> getUserTasksWithFilters(String userId, TaskFilterRequest filter, Pageable pageable) {
         Specification<Task> spec = (root, query, cb) -> {
