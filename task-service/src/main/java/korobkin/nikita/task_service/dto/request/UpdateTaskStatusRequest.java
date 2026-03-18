@@ -1,6 +1,7 @@
 package korobkin.nikita.task_service.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import korobkin.nikita.task_service.entity.enums.TaskStatus;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,5 +12,6 @@ import lombok.Setter;
 public class UpdateTaskStatusRequest {
 
     @Schema(description = "New task status", example = "IN_PROGRESS")
+    @NotNull(message = "Status is required")
     private TaskStatus status;
 }
