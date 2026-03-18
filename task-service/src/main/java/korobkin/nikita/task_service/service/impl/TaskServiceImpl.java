@@ -1,8 +1,11 @@
 package korobkin.nikita.task_service.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Predicate;
 import korobkin.nikita.task_events.TaskCreatedEvent;
 import korobkin.nikita.task_events.TaskStatusChangedEvent;
+import korobkin.nikita.task_service.config.kafka.KafkaTopicProperties;
 import korobkin.nikita.task_service.dto.request.CreateTaskRequest;
 import korobkin.nikita.task_service.dto.request.TaskFilterRequest;
 import korobkin.nikita.task_service.dto.request.UpdateTaskRequest;
@@ -10,13 +13,14 @@ import korobkin.nikita.task_service.dto.request.UpdateTaskStatusRequest;
 import korobkin.nikita.task_service.dto.response.PagedResponse;
 import korobkin.nikita.task_service.dto.response.TaskResponse;
 import korobkin.nikita.task_service.entity.Task;
+import korobkin.nikita.task_service.entity.TaskEventOutbox;
 import korobkin.nikita.task_service.entity.Task_;
 import korobkin.nikita.task_service.entity.enums.TaskStatus;
 import korobkin.nikita.task_service.exception.ErrorCode;
 import korobkin.nikita.task_service.exception.TaskAccessDeniedException;
 import korobkin.nikita.task_service.exception.TaskNotFoundException;
-import korobkin.nikita.task_service.kafka.producer.TaskEventProducer;
 import korobkin.nikita.task_service.mapper.TaskMapper;
+import korobkin.nikita.task_service.repository.TaskEventOutboxRepository;
 import korobkin.nikita.task_service.repository.TaskRepository;
 import korobkin.nikita.task_service.service.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +43,9 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
-    private final TaskEventProducer taskEventProducer;
+    private final KafkaTopicProperties kafkaTopicProperties;
+    private final TaskEventOutboxRepository taskEventOutboxRepository;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -59,7 +65,16 @@ public class TaskServiceImpl implements TaskService {
                 task.getCreatedAt()
         );
 
-        taskEventProducer.sendTaskCreated(taskCreatedEvent);
+        try {
+            TaskEventOutbox outbox = TaskEventOutbox.builder()
+                    .eventType(kafkaTopicProperties.getTaskCreated())
+                    .payload(objectMapper.writeValueAsString(taskCreatedEvent))
+                    .build();
+
+            taskEventOutboxRepository.save(outbox);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize TaskCreatedEvent, skipping outbox", e);
+        }
 
         return taskMapper.toResponse(task);
     }
@@ -73,7 +88,6 @@ public class TaskServiceImpl implements TaskService {
 
         return taskMapper.toPagedDto(tasksPage);
     }
-
 
     @Override
     @Transactional(readOnly = true)
@@ -118,7 +132,16 @@ public class TaskServiceImpl implements TaskService {
                 task.getUpdatedAt()
         );
 
-        taskEventProducer.sendTaskStatusChanged(taskStatusChangedEvent);
+        try {
+            TaskEventOutbox outbox = TaskEventOutbox.builder()
+                    .eventType(kafkaTopicProperties.getTaskStatusChanged())
+                    .payload(objectMapper.writeValueAsString(taskStatusChangedEvent))
+                    .build();
+
+            taskEventOutboxRepository.save(outbox);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize TaskCreatedEvent, skipping outbox", e);
+        }
 
         return taskMapper.toResponse(task);
     }
