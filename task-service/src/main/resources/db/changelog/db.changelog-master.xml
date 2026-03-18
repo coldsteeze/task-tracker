@@ -7,4 +7,5 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <include file="db/changelog/changes/001_create_tasks_table.xml"/>
+    <include file="db/changelog/changes/002_create_task_events_outbox_table.xml"/>
 </databaseChangeLog>
