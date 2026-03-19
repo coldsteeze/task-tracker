@@ -9,5 +9,5 @@ public record TaskStatusChangedEvent(
         String title,
         String oldStatus,
         String newStatus,
-        LocalDateTime timestamp
-) {}
+        LocalDateTime updatedAt
+) implements TaskEvent {}

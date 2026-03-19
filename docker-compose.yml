@@ -10,6 +10,22 @@ services:
       - "5432:5432"
     volumes:
       - auth_postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
+
+  task_postgres:
+    image: postgres:18.3
+    container_name: task_postgres
+    environment:
+      POSTGRES_USER: ${TASK_SERVICE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${TASK_SERVICE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${TASK_SERVICE_POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - task_postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
@@ -31,6 +47,29 @@ services:
     networks:
       - app-network
 
+  kafka:
+    image: apache/kafka:4.1.1
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - app-network
+
   auth-service:
     build:
       context: ./auth-service
@@ -48,9 +87,40 @@ services:
       KEYCLOAK_FRONTEND_CLIENT_SECRET: ${KEYCLOAK_FRONTEND_CLIENT_SECRET}
     ports:
       - "8081:8080"
+    networks:
+      - app-network
+    depends_on:
+      - auth_postgres
+      - keycloak
+
+  task-service:
+    build:
+      context: ./task-service
+    image: lemoonier/task-service:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      TASK_SERVICE_POSTGRES_USER: ${AUTH_SERVICE_POSTGRES_USER}
+      TASK_SERVICE_POSTGRES_PASSWORD: ${AUTH_SERVICE_POSTGRES_PASSWORD}
+      TASK_SERVICE_POSTGRES_DB: ${AUTH_SERVICE_POSTGRES_DB}
+      BOOTSTRAP_SERVERS: ${BOOTSTRAP_SERVERS}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      TASK_CREATED_TOPIC: ${TASK_CREATED_TOPIC}
+      TASK_STATUS_CHANGED_TOPIC: ${TASK_STATUS_CHANGED_TOPIC}
+    ports:
+      - "8082:8080"
+    networks:
+      - app-network
+    depends_on:
+      - task_postgres
+      - keycloak
+      - kafka
 
 volumes:
   auth_postgres_data:
+  task_postgres_data:
+  kafka_data:
+    driver: local
 
 networks:
   app-network:
