@@ -1,11 +1,9 @@
 package korobkin.nikita.task_service.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Predicate;
 import korobkin.nikita.task_events.TaskCreatedEvent;
+import korobkin.nikita.task_events.TaskEvent;
 import korobkin.nikita.task_events.TaskStatusChangedEvent;
-import korobkin.nikita.task_service.config.kafka.KafkaTopicProperties;
 import korobkin.nikita.task_service.dto.request.CreateTaskRequest;
 import korobkin.nikita.task_service.dto.request.TaskFilterRequest;
 import korobkin.nikita.task_service.dto.request.UpdateTaskRequest;
@@ -15,6 +13,8 @@ import korobkin.nikita.task_service.dto.response.TaskResponse;
 import korobkin.nikita.task_service.entity.Task;
 import korobkin.nikita.task_service.entity.TaskEventOutbox;
 import korobkin.nikita.task_service.entity.Task_;
+import korobkin.nikita.task_service.entity.enums.TaskEventStatus;
+import korobkin.nikita.task_service.entity.enums.TaskEventType;
 import korobkin.nikita.task_service.entity.enums.TaskStatus;
 import korobkin.nikita.task_service.mapper.TaskMapper;
 import korobkin.nikita.task_service.repository.TaskEventOutboxRepository;
@@ -42,9 +42,7 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
-    private final KafkaTopicProperties kafkaTopicProperties;
     private final TaskEventOutboxRepository taskEventOutboxRepository;
-    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -55,7 +53,7 @@ public class TaskServiceImpl implements TaskService {
         taskRepository.saveAndFlush(task);
         log.info("Task with id {} successfully saved", task.getId());
 
-        TaskCreatedEvent taskCreatedEvent = new TaskCreatedEvent(
+        TaskEvent taskCreatedEvent = new TaskCreatedEvent(
                 task.getId(),
                 task.getUserId(),
                 task.getTitle(),
@@ -64,16 +62,14 @@ public class TaskServiceImpl implements TaskService {
                 task.getCreatedAt()
         );
 
-        try {
-            TaskEventOutbox outbox = TaskEventOutbox.builder()
-                    .eventType(kafkaTopicProperties.getTaskCreated())
-                    .payload(objectMapper.writeValueAsString(taskCreatedEvent))
-                    .build();
+        TaskEventOutbox outbox = TaskEventOutbox.builder()
+                .eventType(TaskEventType.fromEvent(taskCreatedEvent))
+                .payload(taskCreatedEvent)
+                .status(TaskEventStatus.PENDING)
+                .retryCount(0)
+                .build();
 
-            taskEventOutboxRepository.save(outbox);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize TaskCreatedEvent, skipping outbox", e);
-        }
+        taskEventOutboxRepository.save(outbox);
 
         return taskMapper.toResponse(task);
     }
@@ -125,7 +121,7 @@ public class TaskServiceImpl implements TaskService {
 
         log.info("Task with id {} successfully updated status", id);
 
-        TaskStatusChangedEvent taskStatusChangedEvent = new TaskStatusChangedEvent(
+        TaskEvent taskStatusChangedEvent = new TaskStatusChangedEvent(
                 task.getId(),
                 task.getUserId(),
                 task.getTitle(),
@@ -134,16 +130,14 @@ public class TaskServiceImpl implements TaskService {
                 task.getUpdatedAt()
         );
 
-        try {
-            TaskEventOutbox outbox = TaskEventOutbox.builder()
-                    .eventType(kafkaTopicProperties.getTaskStatusChanged())
-                    .payload(objectMapper.writeValueAsString(taskStatusChangedEvent))
-                    .build();
+        TaskEventOutbox outbox = TaskEventOutbox.builder()
+                .eventType(TaskEventType.fromEvent(taskStatusChangedEvent))
+                .payload(taskStatusChangedEvent)
+                .status(TaskEventStatus.PENDING)
+                .retryCount(0)
+                .build();
 
-            taskEventOutboxRepository.save(outbox);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize TaskCreatedEvent, skipping outbox", e);
-        }
+        taskEventOutboxRepository.save(outbox);
 
         return taskMapper.toResponse(task);
     }
