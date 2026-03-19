@@ -13,6 +13,7 @@
         <module>auth-service</module>
         <module>task-events</module>
         <module>task-service</module>
+        <module>notification-service</module>
     </modules>
 
     <properties>
