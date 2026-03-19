@@ -10,4 +10,4 @@ public record TaskCreatedEvent(
         String description,
         String status,
         LocalDateTime createdAt
-) {}
+) implements TaskEvent {}
