@@ -1,5 +1,6 @@
 package korobkin.nikita.task_events;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -10,4 +11,4 @@ public record TaskStatusChangedEvent(
         String oldStatus,
         String newStatus,
         LocalDateTime updatedAt
-) implements TaskEvent {}
+) implements TaskEvent, Serializable {}
