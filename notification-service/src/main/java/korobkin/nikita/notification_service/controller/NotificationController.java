@@ -7,10 +7,8 @@ import korobkin.nikita.notification_service.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -28,8 +26,9 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getNotifications(request, pageable));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<NotificationResponse> getNotification(@PathVariable("id") UUID id) {
-        return ResponseEntity.ok(notificationService.getNotification(id));
+    @PreAuthorize("@notificationSecurity.isOwner(#p0, authentication)")
+    @PatchMapping("/{id}/read")
+    public ResponseEntity<NotificationResponse> readNotification(@PathVariable("id") UUID id) {
+        return ResponseEntity.ok(notificationService.readNotification(id));
     }
 }
