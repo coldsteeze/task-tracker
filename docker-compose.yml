@@ -27,6 +27,20 @@ services:
     networks:
       - app-network
 
+  notification_postgres:
+    image: postgres:18.3
+    container_name: notification_postgres
+    environment:
+      POSTGRES_USER: ${NOTIFICATION_SERVICE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${NOTIFICATION_SERVICE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${NOTIFICATION_SERVICE_POSTGRES_DB}
+    ports:
+      - "5434:5432"
+    volumes:
+      - notification_postgres_data:/var/lib/postgresql
+    networks:
+      - app-network
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.5
     container_name: keycloak
@@ -99,9 +113,9 @@ services:
     image: lemoonier/task-service:latest
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
-      TASK_SERVICE_POSTGRES_USER: ${AUTH_SERVICE_POSTGRES_USER}
-      TASK_SERVICE_POSTGRES_PASSWORD: ${AUTH_SERVICE_POSTGRES_PASSWORD}
-      TASK_SERVICE_POSTGRES_DB: ${AUTH_SERVICE_POSTGRES_DB}
+      TASK_SERVICE_POSTGRES_USER: ${TASK_SERVICE_POSTGRES_USER}
+      TASK_SERVICE_POSTGRES_PASSWORD: ${TASK_SERVICE_POSTGRES_PASSWORD}
+      TASK_SERVICE_POSTGRES_DB: ${TASK_SERVICE_POSTGRES_DB}
       BOOTSTRAP_SERVERS: ${BOOTSTRAP_SERVERS}
       KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
       KEYCLOAK_REALM: ${KEYCLOAK_REALM}
@@ -116,9 +130,33 @@ services:
       - keycloak
       - kafka
 
+  notification-service:
+    build:
+      context: ./notification-service
+    image: lemoonier/notification-service:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      TASK_SERVICE_POSTGRES_USER: ${NOTIFICATION_SERVICE_POSTGRES_USER}
+      TASK_SERVICE_POSTGRES_PASSWORD: ${NOTIFICATION_SERVICE_POSTGRES_PASSWORD}
+      TASK_SERVICE_POSTGRES_DB: ${NOTIFICATION_SERVICE_POSTGRES_DB}
+      BOOTSTRAP_SERVERS: ${BOOTSTRAP_SERVERS}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      TASK_CREATED_TOPIC: ${TASK_CREATED_TOPIC}
+      TASK_STATUS_CHANGED_TOPIC: ${TASK_STATUS_CHANGED_TOPIC}
+    ports:
+      - "8083:8080"
+    networks:
+      - app-network
+    depends_on:
+      - notification_postgres
+      - keycloak
+      - kafka
+
 volumes:
   auth_postgres_data:
   task_postgres_data:
+  notification_postgres_data:
   kafka_data:
     driver: local
 
