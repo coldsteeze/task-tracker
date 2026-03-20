@@ -1,5 +1,6 @@
 package korobkin.nikita.notification_service.controller;
 
+import korobkin.nikita.notification_service.docs.NotificationControllerDocs;
 import korobkin.nikita.notification_service.dto.NotificationFilterRequest;
 import korobkin.nikita.notification_service.dto.NotificationResponse;
 import korobkin.nikita.notification_service.dto.PagedResponse;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/notifications")
-public class NotificationController {
+public class NotificationController implements NotificationControllerDocs {
 
     private final NotificationService notificationService;
 
