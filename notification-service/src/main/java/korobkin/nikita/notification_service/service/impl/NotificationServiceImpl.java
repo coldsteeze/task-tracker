@@ -1,6 +1,5 @@
 package korobkin.nikita.notification_service.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.Predicate;
 import korobkin.nikita.notification_service.dto.NotificationFilterRequest;
 import korobkin.nikita.notification_service.dto.NotificationResponse;
@@ -9,6 +8,8 @@ import korobkin.nikita.notification_service.entity.Notification;
 import korobkin.nikita.notification_service.entity.Notification_;
 import korobkin.nikita.notification_service.entity.enums.NotificationStatus;
 import korobkin.nikita.notification_service.entity.enums.NotificationType;
+import korobkin.nikita.notification_service.exception.ErrorCode;
+import korobkin.nikita.notification_service.exception.NotificationAlreadyReadException;
 import korobkin.nikita.notification_service.mapper.NotificationMapper;
 import korobkin.nikita.notification_service.repository.NotificationRepository;
 import korobkin.nikita.notification_service.service.NotificationService;
@@ -36,7 +37,6 @@ import java.util.UUID;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final ObjectMapper objectMapper;
     private final NotificationMapper notificationMapper;
 
     @Override
@@ -46,7 +46,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setUserId(event.userId());
         notification.setType(NotificationType.TASK_CREATED);
         notification.setStatus(NotificationStatus.UNREAD);
-        notification.setPayload(objectMapper.valueToTree(event));
+        notification.setPayload(event);
 
         notificationRepository.save(notification);
     }
@@ -58,13 +58,13 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setUserId(event.userId());
         notification.setType(NotificationType.TASK_STATUS_CHANGED);
         notification.setStatus(NotificationStatus.UNREAD);
-        notification.setPayload(objectMapper.valueToTree(event));
+        notification.setPayload(event);
 
         notificationRepository.save(notification);
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public PagedResponse<NotificationResponse> getNotifications(
             NotificationFilterRequest request,
             Pageable pageable) {
@@ -79,12 +79,20 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public NotificationResponse getNotification(UUID id) {
-        Notification notification = notificationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("123"));
+    public NotificationResponse readNotification(UUID id) {
+        Notification notification = notificationRepository.getReferenceById(id);
+
+        if (notification.getStatus() == NotificationStatus.READ) {
+            throw new NotificationAlreadyReadException(ErrorCode.NOTIFICATION_ALREADY_READ);
+        }
+
+        notification.setStatus(NotificationStatus.READ);
+
+        log.info("Notification with id {} successfully read", id);
 
         return notificationMapper.toResponse(notification);
     }
+
 
     private String getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

@@ -17,5 +17,5 @@ public interface NotificationService {
 
     PagedResponse<NotificationResponse> getNotifications(NotificationFilterRequest request, Pageable pageable);
 
-    NotificationResponse getNotification(UUID id);
+    NotificationResponse readNotification(UUID id);
 }
