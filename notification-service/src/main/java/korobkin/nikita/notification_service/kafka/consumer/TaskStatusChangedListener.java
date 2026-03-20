@@ -1,5 +1,6 @@
 package korobkin.nikita.notification_service.kafka.consumer;
 
+import korobkin.nikita.notification_service.entity.enums.NotificationType;
 import korobkin.nikita.notification_service.service.NotificationService;
 import korobkin.nikita.task_events.TaskStatusChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,6 @@ public class TaskStatusChangedListener {
     )
     public void handleTaskStatusChanged(TaskStatusChangedEvent event) {
         log.info("received TaskStatusChangedEvent: {}", event);
-        notificationService.createStatusChangedNotification(event);
+        notificationService.createTaskEventNotification(event, NotificationType.TASK_STATUS_CHANGED);
     }
 }

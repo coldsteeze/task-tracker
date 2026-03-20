@@ -14,7 +14,6 @@ import korobkin.nikita.notification_service.fixtures.TaskEventFixtures;
 import korobkin.nikita.notification_service.repository.NotificationRepository;
 import korobkin.nikita.notification_service.service.NotificationService;
 import korobkin.nikita.task_events.TaskCreatedEvent;
-import korobkin.nikita.task_events.TaskStatusChangedEvent;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,10 +55,10 @@ public class NotificationServiceIntegrationTest extends AbstractIntegrationTest 
     }
 
     @Test
-    void createTaskCreatedNotification_shouldSaveNotification() {
+    void createTaskEventNotification_shouldSaveNotification() {
         TaskCreatedEvent taskEvent = TaskEventFixtures.taskCreatedEvent(userId);
 
-        notificationService.createTaskCreatedNotification(taskEvent);
+        notificationService.createTaskEventNotification(taskEvent, NotificationType.TASK_CREATED);
 
         List<Notification> notifications = notificationRepository.findAll();
 
@@ -69,24 +68,6 @@ public class NotificationServiceIntegrationTest extends AbstractIntegrationTest 
 
         assertThat(notification.getUserId()).isEqualTo(userId);
         assertThat(notification.getType()).isEqualTo(NotificationType.TASK_CREATED);
-        assertThat(notification.getStatus()).isEqualTo(NotificationStatus.UNREAD);
-        assertThat(notification.getPayload()).isNotNull();
-    }
-
-    @Test
-    void createStatusChangedNotification_shouldSaveNotification() {
-        TaskStatusChangedEvent taskEvent = TaskEventFixtures.taskStatusChangedEvent(userId);
-
-        notificationService.createStatusChangedNotification(taskEvent);
-
-        List<Notification> notifications = notificationRepository.findAll();
-
-        assertThat(notifications).hasSize(1);
-
-        Notification notification = notifications.getFirst();
-
-        assertThat(notification.getUserId()).isEqualTo(userId);
-        assertThat(notification.getType()).isEqualTo(NotificationType.TASK_STATUS_CHANGED);
         assertThat(notification.getStatus()).isEqualTo(NotificationStatus.UNREAD);
         assertThat(notification.getPayload()).isNotNull();
     }

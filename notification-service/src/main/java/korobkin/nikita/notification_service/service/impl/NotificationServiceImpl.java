@@ -13,8 +13,7 @@ import korobkin.nikita.notification_service.exception.NotificationAlreadyReadExc
 import korobkin.nikita.notification_service.mapper.NotificationMapper;
 import korobkin.nikita.notification_service.repository.NotificationRepository;
 import korobkin.nikita.notification_service.service.NotificationService;
-import korobkin.nikita.task_events.TaskCreatedEvent;
-import korobkin.nikita.task_events.TaskStatusChangedEvent;
+import korobkin.nikita.task_events.TaskEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -42,22 +41,10 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void createTaskCreatedNotification(TaskCreatedEvent event) {
+    public void createTaskEventNotification(TaskEvent event, NotificationType type) {
         Notification notification = new Notification();
         notification.setUserId(event.userId());
-        notification.setType(NotificationType.TASK_CREATED);
-        notification.setStatus(NotificationStatus.UNREAD);
-        notification.setPayload(event);
-
-        notificationRepository.save(notification);
-    }
-
-    @Override
-    @Transactional
-    public void createStatusChangedNotification(TaskStatusChangedEvent event) {
-        Notification notification = new Notification();
-        notification.setUserId(event.userId());
-        notification.setType(NotificationType.TASK_STATUS_CHANGED);
+        notification.setType(type);
         notification.setStatus(NotificationStatus.UNREAD);
         notification.setPayload(event);
 
