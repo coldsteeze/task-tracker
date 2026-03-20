@@ -1,17 +1,16 @@
 package korobkin.nikita.notification_service.entity;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import korobkin.nikita.notification_service.entity.enums.NotificationStatus;
 import korobkin.nikita.notification_service.entity.enums.NotificationType;
+import korobkin.nikita.task_events.TaskEvent;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
-
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -41,7 +40,7 @@ public class Notification {
 
     @Type(JsonBinaryType.class)
     @Column(name = "payload", nullable = false, columnDefinition = "jsonb")
-    private JsonNode payload;
+    private TaskEvent payload;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
