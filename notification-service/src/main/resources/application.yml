@@ -1,0 +1,26 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.xml
+
+  kafka:
+    consumer:
+      group-id: user-profile-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: korobkin.nikita.task_events.TaskEvent
+        spring.json.trusted.packages: "korobkin.nikita.task_events"
+
+
+logging:
+  level:
+    org.springframework.security: DEBUG
