@@ -15,8 +15,10 @@ import java.time.LocalDateTime;
 @Schema(description = "Request filter DTO for searching notifications")
 public class NotificationFilterRequest {
 
+    @Schema(description = "Filter by notification type", example = "TASK_CREATED")
     private NotificationType type;
 
+    @Schema(description = "Filter by notification status", example = "UNREAD")
     private NotificationStatus status;
 
     @Schema(description = "Filter by creation date (start, optional)")
