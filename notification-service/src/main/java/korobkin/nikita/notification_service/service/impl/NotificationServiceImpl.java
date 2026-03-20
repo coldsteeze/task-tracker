@@ -26,6 +26,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -87,6 +88,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         notification.setStatus(NotificationStatus.READ);
+        notification.setReadAt(LocalDateTime.now());
 
         log.info("Notification with id {} successfully read", id);
 
