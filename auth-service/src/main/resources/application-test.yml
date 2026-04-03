@@ -1,0 +1,9 @@
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm-resource: test-realm
+  admin-client:
+    client-id: admin-cli
+    client-secret: admin-secret
+  frontend-client:
+    client-id: auth-service
+    client-secret: test-secret

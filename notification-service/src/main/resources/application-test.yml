@@ -1,0 +1,5 @@
+app:
+  kafka:
+    topics:
+      task-created: task-created-topic
+      task-status-changed: task-status-changed-topic

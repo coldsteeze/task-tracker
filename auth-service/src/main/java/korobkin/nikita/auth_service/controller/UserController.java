@@ -1,0 +1,24 @@
+package korobkin.nikita.auth_service.controller;
+
+import korobkin.nikita.auth_service.docs.UserControllerDocs;
+import korobkin.nikita.auth_service.dto.response.UserResponse;
+import korobkin.nikita.auth_service.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/v1/users")
+public class UserController implements UserControllerDocs {
+
+    private final UserService userService;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable("id") String id) {
+        return ResponseEntity.ok(userService.getUserById(id));
+    }
+}

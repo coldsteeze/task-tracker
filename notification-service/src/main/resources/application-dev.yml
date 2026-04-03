@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5434/notification-service
+    username: postgres
+    password: postgres
+  kafka:
+    bootstrap-servers: localhost:9094
+
+server:
+  port: 8084
+
+keycloak:
+  auth-server-url: http://localhost:8080
+  realm-resource: task-tracker
+
+app:
+  kafka:
+    topics:
+      task-created: task-created-topic
+      task-status-changed: task-status-changed-topic

@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://notification_postgres:5432/${NOTIFICATION_SERVICE_POSTGRES_DB:notification_db}
+    username: ${NOTIFICATION_SERVICE_POSTGRES_USER:postgres}
+    password: ${NOTIFICATION_SERVICE_POSTGRES_PASSWORD:postgres}
+
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+
+keycloak:
+  auth-server-url: ${KEYCLOAK_AUTH_SERVER_URL}
+  realm-resource: ${KEYCLOAK_REALM}
+
+app:
+  kafka:
+    topics:
+      task-created: ${TASK_CREATED_TOPIC}
+      task-status-changed: ${TASK_STATUS_CHANGED_TOPIC}

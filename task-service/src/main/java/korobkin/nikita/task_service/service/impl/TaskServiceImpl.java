@@ -1,0 +1,196 @@
+package korobkin.nikita.task_service.service.impl;
+
+import jakarta.persistence.criteria.Predicate;
+import korobkin.nikita.task_events.TaskCreatedEvent;
+import korobkin.nikita.task_events.TaskEvent;
+import korobkin.nikita.task_events.TaskStatusChangedEvent;
+import korobkin.nikita.task_service.dto.request.CreateTaskRequest;
+import korobkin.nikita.task_service.dto.request.TaskFilterRequest;
+import korobkin.nikita.task_service.dto.request.UpdateTaskRequest;
+import korobkin.nikita.task_service.dto.request.UpdateTaskStatusRequest;
+import korobkin.nikita.task_service.dto.response.PagedResponse;
+import korobkin.nikita.task_service.dto.response.TaskResponse;
+import korobkin.nikita.task_service.entity.Task;
+import korobkin.nikita.task_service.entity.TaskEventOutbox;
+import korobkin.nikita.task_service.entity.Task_;
+import korobkin.nikita.task_service.entity.enums.TaskEventStatus;
+import korobkin.nikita.task_service.entity.enums.TaskEventType;
+import korobkin.nikita.task_service.entity.enums.TaskStatus;
+import korobkin.nikita.task_service.mapper.TaskMapper;
+import korobkin.nikita.task_service.repository.TaskEventOutboxRepository;
+import korobkin.nikita.task_service.repository.TaskRepository;
+import korobkin.nikita.task_service.service.TaskService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class TaskServiceImpl implements TaskService {
+
+    private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
+    private final TaskEventOutboxRepository taskEventOutboxRepository;
+
+    @Override
+    @Transactional
+    public TaskResponse createTask(CreateTaskRequest request) {
+        Task task = taskMapper.toEntity(request);
+        task.setUserId(getCurrentUserId());
+
+        taskRepository.saveAndFlush(task);
+        log.info("Task with id {} successfully saved", task.getId());
+
+        TaskEvent taskCreatedEvent = new TaskCreatedEvent(
+                task.getId(),
+                task.getUserId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getStatus().toString(),
+                task.getCreatedAt()
+        );
+
+        TaskEventOutbox outbox = TaskEventOutbox.builder()
+                .eventType(TaskEventType.fromEvent(taskCreatedEvent))
+                .payload(taskCreatedEvent)
+                .status(TaskEventStatus.PENDING)
+                .retryCount(0)
+                .build();
+
+        taskEventOutboxRepository.save(outbox);
+
+        return taskMapper.toResponse(task);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<TaskResponse> getTasks(TaskFilterRequest request, Pageable pageable) {
+        String currentUserId = getCurrentUserId();
+
+        Page<Task> tasksPage = getUserTasksWithFilters(currentUserId, request, pageable);
+
+        log.info("Successfully get user tasks with user id {}", currentUserId);
+
+        return taskMapper.toPagedDto(tasksPage);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TaskResponse getTaskById(UUID id) {
+        Task task = taskRepository.getReferenceById(id);
+
+        log.info("Task with id {} successfully fetched", id);
+
+        return taskMapper.toResponse(task);
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse updateTaskById(UpdateTaskRequest request, UUID id) {
+        Task task = taskRepository.getReferenceById(id);
+
+        taskMapper.updateEntityFromDto(request, task);
+        taskRepository.saveAndFlush(task);
+
+        log.info("Task with id {} successfully updated", id);
+
+        return taskMapper.toResponse(task);
+    }
+
+    @Override
+    @Transactional
+    public TaskResponse updateTaskStatusById(UpdateTaskStatusRequest request, UUID id) {
+        Task task = taskRepository.getReferenceById(id);
+
+        TaskStatus oldStatus = task.getStatus();
+
+        task.setStatus(request.getStatus());
+        taskRepository.saveAndFlush(task);
+
+        log.info("Task with id {} successfully updated status", id);
+
+        TaskEvent taskStatusChangedEvent = new TaskStatusChangedEvent(
+                task.getId(),
+                task.getUserId(),
+                task.getTitle(),
+                oldStatus.toString(),
+                task.getStatus().toString(),
+                task.getUpdatedAt()
+        );
+
+        TaskEventOutbox outbox = TaskEventOutbox.builder()
+                .eventType(TaskEventType.fromEvent(taskStatusChangedEvent))
+                .payload(taskStatusChangedEvent)
+                .status(TaskEventStatus.PENDING)
+                .retryCount(0)
+                .build();
+
+        taskEventOutboxRepository.save(outbox);
+
+        return taskMapper.toResponse(task);
+    }
+
+    @Override
+    @Transactional
+    public void deleteTaskById(UUID id) {
+        Task task = taskRepository.getReferenceById(id);
+
+        taskRepository.delete(task);
+
+        log.info("Task with id {} successfully deleted", id);
+    }
+
+    private String getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) (authentication != null ? authentication.getPrincipal() : null);
+
+        return jwt != null ? jwt.getSubject() : null;
+    }
+
+    private Page<Task> getUserTasksWithFilters(String userId, TaskFilterRequest filter, Pageable pageable) {
+        Specification<Task> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get(Task_.userId), userId));
+
+            if (filter.getSearch() != null) {
+                predicates.add(cb.like(cb.lower(root.get(Task_.title)), "%" + filter.getSearch().toLowerCase() + "%"));
+            }
+
+            if (filter.getStatus() != null) {
+                predicates.add(cb.equal(root.get(Task_.status), filter.getStatus()));
+            }
+
+            if (filter.getCreatedAfter() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get(Task_.createdAt), filter.getCreatedAfter()));
+            }
+
+            if (filter.getCreatedBefore() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get(Task_.createdAt), filter.getCreatedBefore()));
+            }
+
+            if (filter.getUpdatedAfter() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get(Task_.updatedAt), filter.getUpdatedAfter()));
+            }
+
+            if (filter.getUpdatedBefore() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get(Task_.updatedAt), filter.getUpdatedBefore()));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return taskRepository.findAll(spec, pageable);
+    }
+}
